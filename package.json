@@ -1,4 +1,6 @@
-{
+{    "scripts": {
+  "start": "node api/bot.js"
+},
     "dependencies": {
         "@vercel/kv": "^3.0.0",
         "@vercel/node": "^2.15.10",
