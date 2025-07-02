@@ -1,10 +1,16 @@
 // api/yookassa_webhook.js
-const telegram = require('../telegram');
-const kv = require('../kv');
+require('dotenv').config(); // Для локальной отладки, на Render не обязательно
+const telegram = require('../telegram'); // Убедитесь, что путь правильный
+const kv = require('../kv'); // Убедитесь, что путь правильный
+const express = require('express'); // Добавляем Express
+const app = express();
+app.use(express.json()); // Для парсинга JSON тела запроса от Yookassa
 
 console.log('📌 [Webhook] Module loaded at:', new Date().toISOString());
 
-module.exports = async (req, res) => {
+// **Важно для Render Web Service:**
+// Определяем маршрут, по которому Yookassa будет отправлять запросы
+app.post('/yookassa_webhook', async (req, res) => {
   console.log('🚀 [Webhook] Start processing at:', new Date().toISOString());
   console.log('📌 [Webhook] Request body:', JSON.stringify(req.body, null, 2));
 
@@ -85,4 +91,12 @@ module.exports = async (req, res) => {
     console.error('🔥 [Webhook] UNCAUGHT ERROR:', error.message, error.stack);
     return res.status(500).send(`Internal error: ${error.message}`);
   }
-};
+});
+
+// Запуск Express сервера
+const PORT = process.env.PORT || 3001; // Используем другой порт, чтобы не конфликтовать с ботом
+app.listen(PORT, () => {
+  console.log(`🚀 Yookassa Webhook server listening on port ${PORT}`);
+});
+
+// Удаляем module.exports = async (req, res) => { ... } так как Express сам обрабатывает запросы
