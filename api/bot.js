@@ -51,20 +51,33 @@ bot.command('status', async (ctx) => {
   ctx.reply(`✅ Ваша подписка активна до ${expiryDate.toLocaleDateString('ru-RU')}`);
 });
 
+
 bot.action(/sub_(\d+)/, async (ctx) => {
   const userId = ctx.from.id;
-  const months = parseInt(ctx.match[1]);
+  const plan = parseInt(ctx.match[1], 10);
+
   const prices = { 1: 1600, 2: 2800, 3: 3600 };
+  // длительности в секундах
+  const durations = { 1: 10, 2: 60, 3: 70 };
+
+  const amount = prices[plan];
+  const durationSec = durations[plan];
 
   try {
     const payment = await axios.post(
       'https://api.yookassa.ru/v3/payments',
       {
-        amount: { value: prices[months].toFixed(2), currency: 'RUB' },
+        amount: { value: amount.toFixed(2), currency: 'RUB' },
         capture: true,
-        confirmation: { type: 'redirect', return_url: process.env.YOOKASSA_RETURN_URL },
-        description: `Подписка на ${months} мес.`,
-        metadata: { user_id: userId, months }
+        confirmation: {
+          type: 'redirect',
+          return_url: process.env.YOOKASSA_RETURN_URL
+        },
+        description: `Тестовая подписка на ${durationSec} сек.`,
+        metadata: {
+          user_id: userId,
+          durationSec  // передаём в вебхук именно секунды
+        }
       },
       {
         auth: {
@@ -78,14 +91,13 @@ bot.action(/sub_(\d+)/, async (ctx) => {
       }
     );
 
-    const paymentData = payment.data;
-    await ctx.reply(`Ссылка для оплаты: ${paymentData.confirmation.confirmation_url}`);
-  } catch (error) {
-    console.error('Ошибка при создании платежа:', error.response ? error.response.data : error.message);
-    ctx.reply('Ошибка при создании платежа');
+    const url = payment.data.confirmation.confirmation_url;
+    await ctx.reply(`Перейдите для оплаты: ${url}`);
+  } catch (err) {
+    console.error('Ошибка при создании платежа:', err.response?.data || err.message);
+    await ctx.reply('❌ Не удалось создать платёж, попробуйте позже.');
   }
 });
-
 // --- Конец вашего существующего кода бота ---
 
 // **Важно для Render Web Service:**
